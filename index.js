@@ -111,9 +111,9 @@ app.get('/reports/rollingtrialbalance', async (req, res) => {
       const report = response.body.reports[0];
       if (report && report.rows) {
         report.rows.forEach(section => {
-          if (section.rows) {
+          if (section.rowType === 'Section' && section.rows) {
             section.rows.forEach(row => {
-              if (row.cells && row.cells.length > 0) {
+              if (row.rowType === 'Row' && row.cells && row.cells.length >= 5) {
                 results.push({
                   month: dateStr,
                   account: row.cells[0]?.value || '',

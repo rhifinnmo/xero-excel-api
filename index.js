@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const { XeroClient } = require('xero-node');
 const cors = require('cors');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -22,15 +23,38 @@ const xero = new XeroClient({
 
 let tenantId = null;
 
+// Load saved tokens on startup
+const saved = loadTokens();
+if (saved) {
+  xero.setTokenSet(saved.tokenSet);
+  tenantId = saved.tenantId;
+}
+
+const TOKEN_PATH = './tokens.json';
+
+function saveTokens(tokenSet, tenantId) {
+  fs.writeFileSync(TOKEN_PATH, JSON.stringify({ tokenSet, tenantId }));
+}
+
+function loadTokens() {
+  try {
+    if (fs.existsSync(TOKEN_PATH)) {
+      return JSON.parse(fs.readFileSync(TOKEN_PATH));
+    }
+  } catch (e) {}
+  return null;
+}
+
 app.get('/', async (req, res) => {
   const consentUrl = await xero.buildConsentUrl();
   res.send(`<a href="${consentUrl}">Connect to Xero</a>`);
 });
 
 app.get('/callback', async (req, res) => {
-  await xero.apiCallback(req.url);
+  const tokenSet = await xero.apiCallback(req.url);
   await xero.updateTenants();
   tenantId = xero.tenants[0].tenantId;
+  saveTokens(tokenSet, tenantId);
   res.send('Successfully connected to Xero!');
 });
 

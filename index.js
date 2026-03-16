@@ -138,6 +138,28 @@ app.get('/reports/rollingtrialbalance', async (req, res) => {
   res.json(results);
 });
 
+// Get all available organisations
+app.get('/organisations', async (req, res) => {
+  await xero.updateTenants();
+  const orgs = xero.tenants.map(t => ({
+    tenantId: t.tenantId,
+    name: t.tenantName
+  }));
+  res.json(orgs);
+});
+
+// Switch organisation
+app.get('/switch/:tenantId', async (req, res) => {
+  const { tenantId: newTenantId } = req.params;
+  const tenant = xero.tenants.find(t => t.tenantId === newTenantId);
+  if (!tenant) {
+    return res.status(404).json({ error: 'Organisation not found' });
+  }
+  tenantId = newTenantId;
+  saveTokens(xero.tokenSet, tenantId);
+  res.json({ success: true, organisation: tenant.tenantName });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

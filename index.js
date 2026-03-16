@@ -2,10 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const { XeroClient } = require('xero-node');
 const cors = require('cors');
-const fs = require('fs');
+const { createClient } = require('redis');
 
 const app = express();
 app.use(cors());
+
 const xero = new XeroClient({
   clientId: process.env.XERO_CLIENT_ID,
   clientSecret: process.env.XERO_CLIENT_SECRET,
@@ -21,29 +22,33 @@ const xero = new XeroClient({
   ]
 });
 
+const redisClient = createClient({ url: process.env.REDIS_URL });
+redisClient.connect();
+
 let tenantId = null;
 
-// Load saved tokens on startup
-const saved = loadTokens();
-if (saved) {
-  xero.setTokenSet(saved.tokenSet);
-  tenantId = saved.tenantId;
+async function saveTokens(tokenSet, tid) {
+  await redisClient.set('xero_tokens', JSON.stringify({ tokenSet, tenantId: tid }));
 }
 
-const TOKEN_PATH = './tokens.json';
-
-function saveTokens(tokenSet, tenantId) {
-  fs.writeFileSync(TOKEN_PATH, JSON.stringify({ tokenSet, tenantId }));
-}
-
-function loadTokens() {
+async function loadTokens() {
   try {
-    if (fs.existsSync(TOKEN_PATH)) {
-      return JSON.parse(fs.readFileSync(TOKEN_PATH));
-    }
-  } catch (e) {}
-  return null;
+    const data = await redisClient.get('xero_tokens');
+    return data ? JSON.parse(data) : null;
+  } catch (e) {
+    return null;
+  }
 }
+
+async function startup() {
+  const saved = await loadTokens();
+  if (saved) {
+    xero.setTokenSet(saved.tokenSet);
+    tenantId = saved.tenantId;
+    console.log('Tokens loaded from Redis');
+  }
+}
+startup();
 
 app.get('/', async (req, res) => {
   const consentUrl = await xero.buildConsentUrl();
@@ -54,11 +59,30 @@ app.get('/callback', async (req, res) => {
   const tokenSet = await xero.apiCallback(req.url);
   await xero.updateTenants();
   tenantId = xero.tenants[0].tenantId;
-  saveTokens(tokenSet, tenantId);
+  await saveTokens(tokenSet, tenantId);
   res.send('Successfully connected to Xero!');
 });
 
-// Invoices - loop through all pages
+app.get('/organisations', async (req, res) => {
+  await xero.updateTenants();
+  const orgs = xero.tenants.map(t => ({
+    tenantId: t.tenantId,
+    name: t.tenantName
+  }));
+  res.json(orgs);
+});
+
+app.get('/switch/:tenantId', async (req, res) => {
+  const { tenantId: newTenantId } = req.params;
+  const tenant = xero.tenants.find(t => t.tenantId === newTenantId);
+  if (!tenant) {
+    return res.status(404).json({ error: 'Organisation not found' });
+  }
+  tenantId = newTenantId;
+  await saveTokens(xero.tokenSet, tenantId);
+  res.json({ success: true, organisation: tenant.tenantName });
+});
+
 app.get('/invoices', async (req, res) => {
   let page = 1;
   let allInvoices = [];
@@ -86,19 +110,16 @@ app.get('/invoices', async (req, res) => {
   res.json(allInvoices);
 });
 
-// Chart of Accounts
 app.get('/accounts', async (req, res) => {
   const response = await xero.accountingApi.getAccounts(tenantId);
   res.json(response.body.accounts);
 });
 
-// Trial Balance
 app.get('/reports/trialbalance', async (req, res) => {
   const response = await xero.accountingApi.getReportTrialBalance(tenantId);
   res.json(response.body.reports);
 });
 
-// Rolling Trial Balance
 app.get('/reports/rollingtrialbalance', async (req, res) => {
   const results = [];
   const now = new Date();
@@ -130,34 +151,9 @@ app.get('/reports/rollingtrialbalance', async (req, res) => {
     } catch (e) {
       // Skip months with no data
     }
-
-    // Move to next month end
     date = new Date(date.getFullYear(), date.getMonth() + 2, 0);
   }
-
   res.json(results);
-});
-
-// Get all available organisations
-app.get('/organisations', async (req, res) => {
-  await xero.updateTenants();
-  const orgs = xero.tenants.map(t => ({
-    tenantId: t.tenantId,
-    name: t.tenantName
-  }));
-  res.json(orgs);
-});
-
-// Switch organisation
-app.get('/switch/:tenantId', async (req, res) => {
-  const { tenantId: newTenantId } = req.params;
-  const tenant = xero.tenants.find(t => t.tenantId === newTenantId);
-  if (!tenant) {
-    return res.status(404).json({ error: 'Organisation not found' });
-  }
-  tenantId = newTenantId;
-  saveTokens(xero.tokenSet, tenantId);
-  res.json({ success: true, organisation: tenant.tenantName });
 });
 
 const PORT = process.env.PORT || 3000;

@@ -156,6 +156,12 @@ app.get('/reports/rollingtrialbalance', async (req, res) => {
   res.json(results);
 });
 
+// Get consent URL for connecting new organisation
+app.get('/connect', async (req, res) => {
+  const consentUrl = await xero.buildConsentUrl();
+  res.json({ url: consentUrl });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

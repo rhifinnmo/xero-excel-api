@@ -1,4 +1,9 @@
 const API_BASE = 'https://xero-excel-api-production.up.railway.app';
+const API_PASSWORD = 'finnmoFINNMO';
+
+const apiFetch = (url) => fetch(url, {
+  headers: { 'x-api-password': API_PASSWORD }
+});
 
 Office.onReady(async () => {
   await loadOrganisations();
@@ -12,7 +17,7 @@ Office.onReady(async () => {
 
 async function loadOrganisations() {
   try {
-    const response = await fetch(API_BASE + '/organisations');
+    const response = await apiFetch(API_BASE + '/organisations');
     const orgs = await response.json();
     const select = document.getElementById('org-select');
     select.innerHTML = '';
@@ -50,7 +55,7 @@ async function loadData(endpoint, sheetName) {
   const status = document.getElementById('status');
   status.textContent = `Loading ${sheetName}...`;
   try {
-    const response = await fetch(API_BASE + endpoint);
+    const response = await apiFetch(API_BASE + endpoint);
     const data = await response.json();
     await Excel.run(async (context) => {
       const sheets = context.workbook.worksheets;
@@ -77,7 +82,7 @@ async function loadRollingTrialBalance() {
   const status = document.getElementById('status');
   status.textContent = 'Loading Rolling Trial Balance... this may take a minute!';
   try {
-    const response = await fetch(API_BASE + '/reports/rollingtrialbalance');
+    const response = await apiFetch(API_BASE + '/reports/rollingtrialbalance');
     const data = await response.json();
     await Excel.run(async (context) => {
       const sheets = context.workbook.worksheets;
@@ -129,7 +134,7 @@ async function connectNewOrganisation() {
   const status = document.getElementById('status');
   status.textContent = 'Opening Xero login...';
   try {
-    const response = await fetch(API_BASE + '/connect');
+    const response = await apiFetch(API_BASE + '/connect');
     const data = await response.json();
     window.open(data.url, '_blank');
     status.textContent = 'Complete the login in your browser, then click Switch Organisation to refresh.';

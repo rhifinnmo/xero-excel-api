@@ -7,6 +7,17 @@ const { createClient } = require('redis');
 
 const app = express();
 app.use(cors());
+
+// Password protection
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path === '/callback') return next();
+  const password = req.headers['x-api-password'];
+  if (password !== process.env.API_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const xero = new XeroClient({

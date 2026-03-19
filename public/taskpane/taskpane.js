@@ -17,9 +17,8 @@ async function handleLogin() {
   const error = document.getElementById('login-error');
   error.style.display = 'none';
 
-  // Test the password by calling /organisations
   try {
-    const response = await fetch(API_BASE + '/organisations', {
+    const response = await fetch(API_BASE + '/verify', {
       headers: { 'x-api-password': code }
     });
     if (response.status === 401) {
@@ -35,6 +34,7 @@ async function handleLogin() {
     document.getElementById('btn-logout').onclick = handleLogout;
     document.getElementById('btn-switch').onclick = switchOrganisation;
     document.getElementById('btn-connect').onclick = connectNewOrganisation;
+    document.getElementById('btn-reconnect').onclick = reconnectXero;
     document.getElementById('btn-invoices').onclick = () => loadData('/invoices', 'Invoices');
     document.getElementById('btn-accounts').onclick = () => loadData('/accounts', 'Accounts');
     document.getElementById('btn-trialbalance').onclick = () => loadData('/reports/trialbalance', 'Trial Balance');

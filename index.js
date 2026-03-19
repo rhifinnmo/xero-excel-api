@@ -19,6 +19,7 @@ app.use((req, res, next) => {
   next();
 });
 
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const xero = new XeroClient({
@@ -174,6 +175,11 @@ app.get('/reports/rollingtrialbalance', async (req, res) => {
 app.get('/connect', async (req, res) => {
   const consentUrl = await xero.buildConsentUrl();
   res.json({ url: consentUrl });
+});
+
+// Verify password only
+app.get('/verify', async (req, res) => {
+  res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 3000;

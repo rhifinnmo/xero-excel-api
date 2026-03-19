@@ -181,3 +181,16 @@ function flattenData(data) {
   });
   return rows;
 }
+
+async function reconnectXero() {
+  const status = document.getElementById('status');
+  status.textContent = 'Opening Xero login...';
+  try {
+    const response = await apiFetch(API_BASE + '/connect');
+    const data = await response.json();
+    Office.context.ui.openBrowserWindow(data.url);
+    status.textContent = 'Complete the login in your browser, then try loading data again.';
+  } catch (err) {
+    status.textContent = `Error: ${err.message}`;
+  }
+}

@@ -1,19 +1,58 @@
 const API_BASE = 'https://xero-excel-api-production.up.railway.app';
-const API_PASSWORD = 'finnmoFINNMO';
+let apiPassword = null;
 
 const apiFetch = (url) => fetch(url, {
-  headers: { 'x-api-password': API_PASSWORD }
+  headers: { 'x-api-password': apiPassword }
 });
 
-Office.onReady(async () => {
-  await loadOrganisations();
-  document.getElementById('btn-switch').onclick = switchOrganisation;
-  document.getElementById('btn-invoices').onclick = () => loadData('/invoices', 'Invoices');
-  document.getElementById('btn-accounts').onclick = () => loadData('/accounts', 'Accounts');
-  document.getElementById('btn-trialbalance').onclick = () => loadData('/reports/trialbalance', 'Trial Balance');
-  document.getElementById('btn-rollingtrialbalance').onclick = () => loadRollingTrialBalance();
-  document.getElementById('btn-connect').onclick = connectNewOrganisation;
+Office.onReady(() => {
+  document.getElementById('btn-login').onclick = handleLogin;
+  document.getElementById('access-code').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
 });
+
+async function handleLogin() {
+  const code = document.getElementById('access-code').value;
+  const error = document.getElementById('login-error');
+  error.style.display = 'none';
+
+  // Test the password by calling /organisations
+  try {
+    const response = await fetch(API_BASE + '/organisations', {
+      headers: { 'x-api-password': code }
+    });
+    if (response.status === 401) {
+      error.style.display = 'block';
+      return;
+    }
+    // Password correct
+    apiPassword = code;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-screen').style.display = 'block';
+
+    // Set up main screen buttons
+    document.getElementById('btn-logout').onclick = handleLogout;
+    document.getElementById('btn-switch').onclick = switchOrganisation;
+    document.getElementById('btn-connect').onclick = connectNewOrganisation;
+    document.getElementById('btn-invoices').onclick = () => loadData('/invoices', 'Invoices');
+    document.getElementById('btn-accounts').onclick = () => loadData('/accounts', 'Accounts');
+    document.getElementById('btn-trialbalance').onclick = () => loadData('/reports/trialbalance', 'Trial Balance');
+    document.getElementById('btn-rollingtrialbalance').onclick = () => loadRollingTrialBalance();
+
+    await loadOrganisations();
+  } catch (err) {
+    error.textContent = 'Connection error. Please try again.';
+    error.style.display = 'block';
+  }
+}
+
+function handleLogout() {
+  apiPassword = null;
+  document.getElementById('access-code').value = '';
+  document.getElementById('main-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'block';
+}
 
 async function loadOrganisations() {
   try {
@@ -40,12 +79,25 @@ async function switchOrganisation() {
   const status = document.getElementById('status');
   status.textContent = `Switching to ${orgName}...`;
   try {
-    const response = await fetch(`${API_BASE}/switch/${tenantId}`);
+    const response = await apiFetch(`${API_BASE}/switch/${tenantId}`);
     const data = await response.json();
     if (data.success) {
       document.getElementById('current-org').textContent = `Current: ${orgName}`;
       status.textContent = `Switched to ${orgName} successfully!`;
     }
+  } catch (err) {
+    status.textContent = `Error: ${err.message}`;
+  }
+}
+
+async function connectNewOrganisation() {
+  const status = document.getElementById('status');
+  status.textContent = 'Opening Xero login...';
+  try {
+    const response = await apiFetch(API_BASE + '/connect');
+    const data = await response.json();
+    Office.context.ui.openBrowserWindow(data.url);
+    status.textContent = 'Complete the login in your browser, then click Refresh Organisations.';
   } catch (err) {
     status.textContent = `Error: ${err.message}`;
   }
@@ -92,7 +144,7 @@ async function loadRollingTrialBalance() {
       if (existing) existing.delete();
       const sheet = sheets.add('Rolling Trial Balance');
       sheet.activate();
-      const headers = ['Month', 'Account', 'Debit', 'Credit', 'YTD Debit', 'YTD Credit'];
+      const headers = ['Month', 'Account', 'Debit','Credit', 'YTD Debit', 'YTD Credit'];
       const rows = [headers];
       data.forEach(row => {
         rows.push([row.month, row.account, row.debit, row.credit, row.ytdDebit, row.ytdCredit]);
@@ -128,17 +180,4 @@ function flattenData(data) {
     rows.push(headers.map(h => item[h] !== null && item[h] !== undefined ? String(item[h]) : ''));
   });
   return rows;
-}
-
-async function connectNewOrganisation() {
-  const status = document.getElementById('status');
-  status.textContent = 'Opening Xero login...';
-  try {
-    const response = await apiFetch(API_BASE + '/connect');
-    const data = await response.json();
-    window.open(data.url, '_blank');
-    status.textContent = 'Complete the login in your browser, then click Switch Organisation to refresh.';
-  } catch (err) {
-    status.textContent = `Error: ${err.message}`;
-  }
 }

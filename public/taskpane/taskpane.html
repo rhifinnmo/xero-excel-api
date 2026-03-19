@@ -8,7 +8,6 @@
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <style>
       body { font-family: Arial, sans-serif; padding: 16px; }
-      h2 { color: #1a73e8; }
       select {
         width: 100%;
         padding: 8px;
@@ -32,21 +31,54 @@
       button:hover { background-color: #1558b0; }
       button#btn-switch { background-color: #34a853; }
       button#btn-switch:hover { background-color: #2d8f47; }
+      button#btn-connect { background-color: #1a73e8; }
+      button#btn-logout { background-color: #ea4335; width: auto; font-size: 12px; padding: 6px 12px; float: right; }
       #status { margin-top: 16px; font-size: 13px; color: #555; }
       #current-org { font-size: 13px; font-weight: bold; color: #1a73e8; margin-bottom: 8px; }
+      #login-screen { text-align: center; padding: 20px 0; }
+      #login-screen img { width: 80px; margin-bottom: 16px; }
+      #login-screen h2 { color: #1a73e8; margin-bottom: 8px; }
+      #login-screen p { font-size: 13px; color: #555; margin-bottom: 16px; }
+      #login-screen input {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      #login-error { color: #ea4335; font-size: 13px; margin-top: 8px; display: none; }
+      #main-screen { display: none; }
     </style>
   </head>
   <body>
-    <p id="current-org">Loading organisations...</p>
-    <select id="org-select"></select>
-    <button id="btn-switch">Switch Organisation</button>
-    <button id="btn-connect">+ Connect New Organisation</button>
-    <hr/>
-    <button id="btn-invoices">Load Invoices</button>
-    <button id="btn-accounts">Load Chart of Accounts</button>
-    <button id="btn-trialbalance">Load Trial Balance</button>
-    <button id="btn-rollingtrialbalance">Load Rolling Trial Balance</button>
-    <p id="status">Click a button to load data into Excel.</p>
+    <!-- Login Screen -->
+    <div id="login-screen">
+      <img src="../../assets/icon-80.png" />
+      <h2>Xero Excel Add-in</h2>
+      <p>Enter your access code to continue</p>
+      <input type="password" id="access-code" placeholder="Access code" />
+      <button id="btn-login">Login</button>
+      <p id="login-error">Incorrect access code. Please try again.</p>
+    </div>
+
+    <!-- Main Screen -->
+    <div id="main-screen">
+      <img src="../../assets/icon-80.png" style="width: 40px; float: left; margin-right: 8px;" />
+      <button id="btn-logout">Logout</button>
+      <div style="clear:both; margin-bottom: 8px;"></div>
+      <p id="current-org">Loading organisations...</p>
+      <select id="org-select"></select>
+      <button id="btn-switch">Switch Organisation</button>
+      <button id="btn-connect">+ Connect New Organisation</button>
+      <hr/>
+      <button id="btn-invoices">Load Invoices</button>
+      <button id="btn-accounts">Load Chart of Accounts</button>
+      <button id="btn-trialbalance">Load Trial Balance</button>
+      <button id="btn-rollingtrialbalance">Load Rolling Trial Balance</button>
+      <p id="status">Click a button to load data into Excel.</p>
+    </div>
     <script src="taskpane.js"></script>
   </body>
 </html>

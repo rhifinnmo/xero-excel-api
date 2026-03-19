@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Xero Excel Add-in</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 16px; }
+      h2 { color: #1a73e8; }
+      select {
+        width: 100%;
+        padding: 8px;
+        margin: 8px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        background-color: #1a73e8;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover { background-color: #1558b0; }
+      button#btn-switch { background-color: #34a853; }
+      button#btn-switch:hover { background-color: #2d8f47; }
+      #status { margin-top: 16px; font-size: 13px; color: #555; }
+      #current-org { font-size: 13px; font-weight: bold; color: #1a73e8; margin-bottom: 8px; }
+    </style>
+  </head>
+  <body>
+    <p id="current-org">Loading organisations...</p>
+    <select id="org-select"></select>
+    <button id="btn-switch">Switch Organisation</button>
+    <button id="btn-connect">+ Connect New Organisation</button>
+    <hr/>
+    <button id="btn-invoices">Load Invoices</button>
+    <button id="btn-accounts">Load Chart of Accounts</button>
+    <button id="btn-trialbalance">Load Trial Balance</button>
+    <button id="btn-rollingtrialbalance">Load Rolling Trial Balance</button>
+    <p id="status">Click a button to load data into Excel.</p>
+    <script src="taskpane.js"></script>
+  </body>
+</html>

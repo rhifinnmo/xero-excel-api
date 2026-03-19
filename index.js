@@ -1,11 +1,13 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const { XeroClient } = require('xero-node');
 const cors = require('cors');
 const { createClient } = require('redis');
 
 const app = express();
 app.use(cors());
+app.use(express.static(path.join(__dirname, 'public')));
 
 const xero = new XeroClient({
   clientId: process.env.XERO_CLIENT_ID,

@@ -13,9 +13,6 @@ app.use((req, res, next) => {
   if (req.path === '/' || req.path === '/callback') return next();
   if (req.path.startsWith('/taskpane') || req.path.startsWith('/assets')) return next();
   const password = req.headers['x-api-password'];
-  console.log('Received password:', password);
-  console.log('Expected password:', process.env.API_PASSWORD);
-  console.log('Match:', password === process.env.API_PASSWORD);
   if (password !== process.env.API_PASSWORD) {
     return res.status(401).json({ error: 'Unauthorized' });
   }

@@ -25,26 +25,45 @@ async function handleLogin() {
       error.style.display = 'block';
       return;
     }
-    // Password correct
     apiPassword = code;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('main-screen').style.display = 'block';
 
-    // Set up main screen buttons
     document.getElementById('btn-logout').onclick = handleLogout;
     document.getElementById('btn-switch').onclick = switchOrganisation;
     document.getElementById('btn-connect').onclick = connectNewOrganisation;
     document.getElementById('btn-reconnect').onclick = reconnectXero;
-    document.getElementById('btn-invoices').onclick = () => loadData('/invoices', 'Invoices');
     document.getElementById('btn-accounts').onclick = () => loadData('/accounts', 'Accounts');
-    document.getElementById('btn-trialbalance').onclick = () => loadData('/reports/trialbalance', 'Trial Balance');
-    document.getElementById('btn-rollingtrialbalance').onclick = () => loadRollingTrialBalance();
+    document.getElementById('btn-rollingtrialbalance').onclick = openDateModal;
+    document.getElementById('btn-modal-cancel').onclick = closeDateModal;
+    document.getElementById('btn-modal-load').onclick = loadRollingTrialBalance;
+
+    // Set default date range to last 36 months
+    setQuickRange(36);
 
     await loadOrganisations();
   } catch (err) {
     error.textContent = 'Connection error. Please try again.';
     error.style.display = 'block';
   }
+}
+
+function openDateModal() {
+  document.getElementById('date-modal').classList.add('open');
+}
+
+function closeDateModal() {
+  document.getElementById('date-modal').classList.remove('open');
+}
+
+function setQuickRange(months) {
+  const to = new Date();
+  const from = new Date();
+  from.setMonth(from.getMonth() - (months - 1));
+  document.getElementById('date-to').value =
+    `${to.getFullYear()}-${String(to.getMonth() + 1).padStart(2, '0')}`;
+  document.getElementById('date-from').value =
+    `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function handleLogout() {
@@ -131,10 +150,30 @@ async function loadData(endpoint, sheetName) {
 }
 
 async function loadRollingTrialBalance() {
+  const fromVal = document.getElementById('date-from').value;
+  const toVal = document.getElementById('date-to').value;
+
+  if (!fromVal || !toVal) {
+    alert('Please select a date range.');
+    return;
+  }
+
+  closeDateModal();
+
+  // Convert YYYY-MM to last day of that month
+  const toDate = new Date(toVal + '-01');
+  const lastDay = new Date(toDate.getFullYear(), toDate.getMonth() + 1, 0);
+  const fromDate = new Date(fromVal + '-01');
+  const lastDayFrom = new Date(fromDate.getFullYear(), fromDate.getMonth() + 1, 0);
+
+  const from = lastDayFrom.toISOString().split('T')[0];
+  const to = lastDay.toISOString().split('T')[0];
+
   const status = document.getElementById('status');
   status.textContent = 'Loading Rolling Trial Balance... this may take a minute!';
+
   try {
-    const response = await apiFetch(API_BASE + '/reports/rollingtrialbalance');
+    const response = await apiFetch(`${API_BASE}/reports/rollingtrialbalance?from=${from}&to=${to}`);
     const data = await response.json();
     await Excel.run(async (context) => {
       const sheets = context.workbook.worksheets;
@@ -144,7 +183,7 @@ async function loadRollingTrialBalance() {
       if (existing) existing.delete();
       const sheet = sheets.add('Rolling Trial Balance');
       sheet.activate();
-      const headers = ['Month', 'Account', 'Debit','Credit', 'YTD Debit', 'YTD Credit'];
+      const headers = ['Month', 'Account', 'Debit', 'Credit', 'YTD Debit', 'YTD Credit'];
       const rows = [headers];
       data.forEach(row => {
         rows.push([row.month, row.account, row.debit, row.credit, row.ytdDebit, row.ytdCredit]);
@@ -152,7 +191,7 @@ async function loadRollingTrialBalance() {
       const range = sheet.getRangeByIndexes(0, 0, rows.length, headers.length);
       range.values = rows;
       await context.sync();
-      status.textContent = 'Rolling Trial Balance loaded successfully!';
+      status.textContent = `Rolling Trial Balance loaded successfully! (${data.length} rows)`;
     });
   } catch (err) {
     status.textContent = `Error: ${err.message}`;

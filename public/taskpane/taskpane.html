@@ -50,9 +50,55 @@
       }
       #login-error { color: #ea4335; font-size: 13px; margin-top: 8px; display: none; }
       #main-screen { display: none; }
+
+      /* Modal */
+      #date-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+      }
+      #date-modal.open { display: flex; }
+      #date-modal-box {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        width: 280px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      }
+      #date-modal-box h3 { margin: 0 0 12px; font-size: 15px; color: #333; }
+      #date-modal-box label { font-size: 12px; color: #555; display: block; margin-top: 10px; }
+      #date-modal-box input[type="month"] {
+        width: 100%;
+        padding: 7px;
+        margin-top: 4px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 13px;
+        box-sizing: border-box;
+      }
+      #date-modal-box .quick-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+      #date-modal-box .quick-btns button {
+        flex: 1;
+        padding: 6px 4px;
+        font-size: 11px;
+        margin: 0;
+        background: #f1f3f4;
+        color: #333;
+        border: 1px solid #ccc;
+      }
+      #date-modal-box .quick-btns button:hover { background: #e2e6ea; }
+      #date-modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+      #date-modal-actions button { margin: 0; flex: 1; }
+      #btn-modal-cancel { background: #ccc; color: #333; }
+      #btn-modal-cancel:hover { background: #bbb; }
     </style>
   </head>
   <body>
+
     <!-- Login Screen -->
     <div id="login-screen">
       <img src="../../assets/icon-80.png" />
@@ -74,12 +120,32 @@
       <button id="btn-connect">+ Connect New Organisation</button>
       <hr/>
       <button id="btn-reconnect" style="background-color: #00B4E6;">↺ Reconnect to Xero</button>
-      <button id="btn-invoices">Load Invoices</button>
       <button id="btn-accounts">Load Chart of Accounts</button>
-      <button id="btn-trialbalance">Load Trial Balance</button>
       <button id="btn-rollingtrialbalance">Load Rolling Trial Balance</button>
       <p id="status">Click a button to load data into Excel.</p>
     </div>
+
+    <!-- Date Range Modal -->
+    <div id="date-modal">
+      <div id="date-modal-box">
+        <h3>Rolling Trial Balance</h3>
+        <div class="quick-btns">
+          <button onclick="setQuickRange(12)">12 months</button>
+          <button onclick="setQuickRange(24)">24 months</button>
+          <button onclick="setQuickRange(36)">36 months</button>
+          <button onclick="setQuickRange(48)">48 months</button>
+        </div>
+        <label>From</label>
+        <input type="month" id="date-from" />
+        <label>To</label>
+        <input type="month" id="date-to" />
+        <div id="date-modal-actions">
+          <button id="btn-modal-cancel">Cancel</button>
+          <button id="btn-modal-load">Load Data</button>
+        </div>
+      </div>
+    </div>
+
     <script src="taskpane.js"></script>
   </body>
 </html>

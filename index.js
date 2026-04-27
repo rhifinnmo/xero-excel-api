@@ -98,49 +98,23 @@ app.get('/switch/:tenantId', async (req, res) => {
   res.json({ success: true, organisation: tenant.tenantName });
 });
 
-app.get('/invoices', async (req, res) => {
-  let page = 1;
-  let allInvoices = [];
-  while (true) {
-    const response = await xero.accountingApi.getInvoices(
-      tenantId,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      ['AUTHORISED'],
-      page,
-      true,
-      true,
-      undefined,
-      true
-    );
-    const invoices = response.body.invoices;
-    if (!invoices || invoices.length === 0) break;
-    allInvoices = allInvoices.concat(invoices);
-    page++;
-  }
-  res.json(allInvoices);
-});
-
 app.get('/accounts', async (req, res) => {
   const response = await xero.accountingApi.getAccounts(tenantId);
   res.json(response.body.accounts);
 });
 
-app.get('/reports/trialbalance', async (req, res) => {
-  const response = await xero.accountingApi.getReportTrialBalance(tenantId);
-  res.json(response.body.reports);
-});
-
 app.get('/reports/rollingtrialbalance', async (req, res) => {
   const results = [];
-  const now = new Date();
-  let date = new Date(2000, 0, 31);
 
-  while (date <= now) {
+  // Use query params if provided, otherwise default to last 36 months
+  const toDate = req.query.to ? new Date(req.query.to) : new Date();
+  const fromDate = req.query.from
+    ? new Date(req.query.from)
+    : new Date(toDate.getFullYear(), toDate.getMonth() - 35, 1);
+
+  let date = new Date(fromDate.getFullYear(), fromDate.getMonth() + 1, 0);
+
+  while (date <= toDate) {
     const dateStr = date.toISOString().split('T')[0];
     try {
       const response = await xero.accountingApi.getReportTrialBalance(tenantId, dateStr);
@@ -164,10 +138,11 @@ app.get('/reports/rollingtrialbalance', async (req, res) => {
         });
       }
     } catch (e) {
-      // Skip months with no data
+      console.error(`Failed for ${dateStr}:`, e.message || e);
     }
     date = new Date(date.getFullYear(), date.getMonth() + 2, 0);
   }
+
   res.json(results);
 });
 

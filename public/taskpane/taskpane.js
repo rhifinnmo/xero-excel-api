@@ -183,10 +183,13 @@ async function loadRollingTrialBalance() {
       if (existing) existing.delete();
       const sheet = sheets.add('Rolling Trial Balance');
       sheet.activate();
-      const headers = ['Month', 'Account', 'Debit', 'Credit', 'YTD Debit', 'YTD Credit'];
+      const headers = ['Month', 'Account Code', 'Account', 'Debit', 'Credit', 'YTD Debit', 'YTD Credit'];
       const rows = [headers];
       data.forEach(row => {
-        rows.push([row.month, row.account, row.debit, row.credit, row.ytdDebit, row.ytdCredit]);
+        const match = row.account.match(/\(([\d\-\/]+)\)$/);
+        const code = match ? match[1] : '';
+        const name = row.account.replace(/\s*\(([\d\-\/]+)\)$/, '').trim();
+        rows.push([row.month, code, name, row.debit, row.credit, row.ytdDebit, row.ytdCredit]);
       });
       const range = sheet.getRangeByIndexes(0, 0, rows.length, headers.length);
       range.values = rows;

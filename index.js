@@ -58,9 +58,13 @@ async function loadTokens() {
 async function startup() {
   const saved = await loadTokens();
   if (saved) {
-    xero.setTokenSet(saved.tokenSet);
-    tenantId = saved.tenantId;
-    console.log('Tokens loaded from Redis');
+    try {
+      xero.setTokenSet(saved.tokenSet);
+      tenantId = saved.tenantId;
+      console.log('Tokens loaded from Redis');
+    } catch (e) {
+      console.log('Saved token invalid, will require reconnect:', e.message);
+    }
   }
 }
 startup();
